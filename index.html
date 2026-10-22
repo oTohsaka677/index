@@ -173,6 +173,15 @@ html.rf .curl{display:none}
 .ro .sbar,.ro .stsel{display:none!important}
 html.rf .stp{position:static;display:inline-block;margin:8px}
 html.rf .stp .sbar{display:none}
+.attrs{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+#radar{flex:0 0 330px;max-width:100%;color:var(--muted)}
+#radar svg{width:100%;height:auto;display:block}
+.atl{flex:1;min-width:240px;display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;font-size:12px;letter-spacing:1px}
+.atl label{color:var(--muted)}
+.atsel{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:2px 4px;font:13px Georgia,serif}
+.rk{font-weight:bold;padding:1px 10px;border-radius:10px;border:1px solid currentColor;min-width:44px;text-align:center;display:inline-block;color:var(--muted);font-size:13px}
+.rk.tC{color:#8fa0c8}.rk.tB{color:#5be3a0}.rk.tA{color:#ffd84d}.rk.tS{color:#ff9a4d}.rk.tSS{color:#ff5a8a}.rk.tSSS{color:#c79bff;text-shadow:0 0 8px #c79bff}
+.avg{grid-column:1/-1;text-align:right;color:var(--muted);margin-top:6px;font-size:13px}
 
 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle}
 #selo{position:fixed;left:14px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:96px;z-index:55;pointer-events:none;transform:rotate(-6deg);filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
@@ -322,6 +331,7 @@ function renderPage(){
   <div class="drop small" data-up="page">🖼 Adicionar imagens/GIFs soltos (arraste para mover, puxe o canto azul para o tamanho)</div>
   ${flowSt(p.media,'page',0)}<div class="lbl">Anotações gerais</div>
   <div class="rt dc" contenteditable="true" data-f="notes" data-ph="Comportamento, estilo de luta, fraquezas…">${rich(p.notes)}</div>
+  ${attrHtml(p)}
   ${flowSt(p.media,'page',1)}<h3>Técnica Amaldiçoada</h3>
   <div class="tech innate" id="sec-tn"><div class="row"><b style="white-space:nowrap">Técnica Inata:</b><input class="tn" data-f="tn" value="${esc(p.tn)}" placeholder="Nome (ex.: Ilimitado)"></div><div class="rt dc" style="margin-top:8px" contenteditable="true" data-f="td" data-ph="Descrição da técnica amaldiçoada…">${rich(p.td)}</div></div>
   <h3>Habilidades da Técnica</h3>
@@ -554,6 +564,39 @@ document.addEventListener('change',e=>{
   if(v==='__c'){v=(prompt('Texto do carimbo:')||'').trim().slice(0,40);if(!v)return}
   (p.stamps=p.stamps||[]).push({t:v,c:PRE[v]||'#7fb2ff',x:Math.round(52+Math.random()*20),y:Math.round(90+Math.random()*60),r:Math.round(Math.random()*24-12),s:1.2});
   persist();renderPage();
+});
+const ATN=['FORÇA','RESISTÊNCIA','VELOCIDADE','POTENCIAL','ENERGIA AMALDIÇOADA','EMISSÃO DE ENERGIA','CONTROLE DE ENERGIA','ENERGIA REVERSA','EXPANSÃO DE DOMÍNIO'];
+const ATS=['FORÇA','RESIST.','VELOC.','POTENC.','E. AMALD.','EMISSÃO','CONTROLE','E. REVERSA','EXP. DOMÍNIO'];
+const RANKS=['—','C-','C','C+','B-','B','B+','A-','A','A+','S-','S','S+','SS-','SS','SS+','SSS'];
+const tier=r=>!r||r==='—'?'':'t'+r.replace(/[+-]/,'');
+function radarSvg(p){
+  const a=p.attr||{},N=9,cx=180,cy=180,R=105;
+  const pt=(i,l,x=0)=>{const g=-Math.PI/2+i*2*Math.PI/N,r=R*l/16+x;return [cx+Math.cos(g)*r,cy+Math.sin(g)*r,g]};
+  const poly=l=>Array.from({length:N},(_,i)=>pt(i,l).slice(0,2).map(v=>v.toFixed(1)).join(',')).join(' ');
+  let g='';
+  [3,6,9,12,15,16].forEach(l=>{g+=`<polygon points="${poly(l)}" fill="none" stroke="currentColor" stroke-opacity="${l===16?.5:.22}" stroke-width="1"/>`});
+  for(let i=0;i<N;i++){const [x,y]=pt(i,16);g+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="currentColor" stroke-opacity=".25"/>`}
+  [[3,'C'],[6,'B'],[9,'A'],[12,'S'],[15,'SS']].forEach(([l,t])=>{const [x,y]=pt(0,l);g+=`<text x="${x+4}" y="${y+3}" font-size="7" fill="currentColor" opacity=".7">${t}</text>`});
+  {const [x,y]=pt(0,16);g+=`<text x="${x-4}" y="${y-1}" font-size="7" text-anchor="end" fill="currentColor" opacity=".8">SSS</text>`}
+  const vals=Array.from({length:N},(_,i)=>Math.max(0,RANKS.indexOf(a[i]||'—')));
+  const dp=vals.map((l,i)=>pt(i,l).slice(0,2).map(v=>v.toFixed(1)).join(',')).join(' ');
+  g+=`<polygon points="${dp}" style="fill:var(--aura);fill-opacity:.3;stroke:var(--aura);stroke-width:2;stroke-linejoin:round"/>`;
+  vals.forEach((l,i)=>{if(l>0){const [x,y]=pt(i,l);g+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.2" style="fill:var(--aura)"/>`}});
+  for(let i=0;i<N;i++){const [x,y,ang]=pt(i,16,16),c=Math.cos(ang);g+=`<text x="${x.toFixed(1)}" y="${(y+3).toFixed(1)}" font-size="9.5" letter-spacing="1" text-anchor="${c>.3?'start':c<-.3?'end':'middle'}" fill="var(--ink)">${ATS[i]}</text>`}
+  return `<svg viewBox="0 0 360 360" role="img" aria-label="Gráfico de atributos">${g}</svg>`;
+}
+function avgHtml(p){const a=p.attr||{},v=Object.keys(a).map(k=>RANKS.indexOf(a[k])).filter(x=>x>0);if(!v.length)return '';const r=RANKS[Math.round(v.reduce((x,y)=>x+y,0)/v.length)];return `Nota geral: <span class="rk ${tier(r)}">${r}</span>`}
+function attrHtml(p){
+  const a=p.attr||{};
+  const rows=ATN.map((n,i)=>`<label>${n}</label>${RO?`<span class="rk ${tier(a[i])}">${a[i]||'—'}</span>`:`<select class="atsel" data-at="${i}">${RANKS.map(r=>`<option${(a[i]||'—')===r?' selected':''}>${r}</option>`).join('')}</select>`}`).join('');
+  return `<h3>Atributos</h3><div class="attrs"><div id="radar">${radarSvg(p)}</div><div class="atl">${rows}<div class="avg" id="avg">${avgHtml(p)}</div></div></div>`;
+}
+document.addEventListener('change',e=>{
+  const t=e.target;if(!t.dataset||t.dataset.at===undefined||RO)return;
+  const p=page();if(!p)return;
+  (p.attr=p.attr||{})[t.dataset.at]=t.value;persist();
+  const r=$('#radar');if(r)r.innerHTML=radarSvg(p);
+  const v=$('#avg');if(v)v.innerHTML=avgHtml(p);
 });
 function stickers(list,k){return (list||[]).map((m,i)=>(m.mode||'free')==='free'?stk(m,i,k):'').join('')}
 function flowSt(list,k,slot){return (list||[]).map((m,i)=>(m.mode||'free')!=='free'&&(m.slot||0)===slot?stk(m,i,k):'').join('')}
