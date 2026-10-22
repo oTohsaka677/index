@@ -173,6 +173,7 @@ html.rf .curl{display:none}
 .ro .sbar,.ro .stsel{display:none!important}
 html.rf .stp{position:static;display:inline-block;margin:8px}
 html.rf .stp .sbar{display:none}
+[data-anc]{position:relative}
 .attrs{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
 #radar{flex:0 0 330px;max-width:100%;color:var(--muted)}
 #radar svg{width:100%;height:auto;display:block}
@@ -323,20 +324,20 @@ function renderPage(){
   el.innerHTML=`
   <div class="head"><span class="num">PÁGINA ${i+2}</span><div class="aura" title="Cor de aura desta página">✦ Aura ${['#7fb2ff','#b48cff','#ff6b8a','#ff9a4d','#ffd84d','#5be3a0','#4fe3ff','#ffffff'].map(c=>`<i class="sw" data-aura="${c}" style="background:${c}"></i>`).join('')}<input type="color" id="auc" value="${p.aura||'#7fb2ff'}"></div><select id="stsel" class="stsel"><option value="">＋ Carimbo…</option>${Object.keys(PRE).map(k=>`<option>${k}</option>`).join('')}<option value="__c">Personalizado…</option></select>
     <div class="acts"><button data-mv="-1" title="Mover para trás">↑</button><button data-mv="1" title="Mover para frente">↓</button><button class="del" data-delp>Excluir página</button></div></div>
-  <div class="top">
+  <div class="top" data-anc="top">
     ${p.photo?`<div class="portrait"><img ${attr(p.photo)} alt="" data-zoom><button class="x" data-rm="photo" title="Remover">×</button></div>`:`<div class="drop portrait" data-up="photo">📷<br>Foto da criatura<small>clique ou arraste</small></div>`}
     <div class="info"><input class="title" data-f="name" value="${esc(p.name)}" placeholder="Nome do oponente"><div class="rt sub" contenteditable="true" data-f="sub" data-ph="Grau, afiliação, aparência…">${rich(p.sub)}</div></div>
   </div>
   
   <div class="drop small" data-up="page">🖼 Adicionar imagens/GIFs soltos (arraste para mover, puxe o canto azul para o tamanho)</div>
-  ${flowSt(p.media,'page',0)}<div class="lbl">Anotações gerais</div>
-  <div class="rt dc" contenteditable="true" data-f="notes" data-ph="Comportamento, estilo de luta, fraquezas…">${rich(p.notes)}</div>
+  ${flowSt(p.media,'page',0)}<div data-anc="notes"><div class="lbl">Anotações gerais</div>
+  <div class="rt dc" contenteditable="true" data-f="notes" data-ph="Comportamento, estilo de luta, fraquezas…">${rich(p.notes)}</div></div>
   ${attrHtml(p)}
   ${flowSt(p.media,'page',1)}<h3>Técnica Amaldiçoada</h3>
-  <div class="tech innate" id="sec-tn"><div class="row"><b style="white-space:nowrap">Técnica Inata:</b><input class="tn" data-f="tn" value="${esc(p.tn)}" placeholder="Nome (ex.: Ilimitado)"></div><div class="rt dc" style="margin-top:8px" contenteditable="true" data-f="td" data-ph="Descrição da técnica amaldiçoada…">${rich(p.td)}</div></div>
+  <div class="tech innate" id="sec-tn" data-anc="tn"><div class="row"><b style="white-space:nowrap">Técnica Inata:</b><input class="tn" data-f="tn" value="${esc(p.tn)}" placeholder="Nome (ex.: Ilimitado)"></div><div class="rt dc" style="margin-top:8px" contenteditable="true" data-f="td" data-ph="Descrição da técnica amaldiçoada…">${rich(p.td)}</div></div>
   <h3>Habilidades da Técnica</h3>
   ${(p.techs||[]).map(t=>`
-  <div class="tech" data-tid="${t.id}">
+  <div class="tech" data-tid="${t.id}" data-anc="${t.id}">
     <div class="row"><input class="tn" data-f="name" value="${esc(t.name)}" placeholder="Nome da habilidade"><button class="del" data-delt="${t.id}">Excluir</button></div>
     ${stickers(t.media,t.id)}
     ${flowSt(t.media,t.id,0)}<div class="lbl">Como funciona</div>
@@ -345,8 +346,8 @@ function renderPage(){
     <div class="rt" contenteditable="true" data-f="counter" data-ph="Brechas, limites, estratégias…">${rich(t.counter)}</div>
     <div class="drop small" data-up="${t.id}">🖼 Clique ou arraste imagens/GIFs</div>
   </div>`).join('')}
-  <button class="main" data-addt>+ Nova habilidade</button>${stickers(p.media,'page')}${stampsHtml(p)}${footer(i+2)}`;
-  el.querySelectorAll('textarea').forEach(fit);if(RO)el.querySelectorAll('input,textarea').forEach(i=>i.readOnly=true);if(RO)el.querySelectorAll('.rt').forEach(d=>d.contentEditable='false');hydrate();afterRender();
+  <button class="main" data-addt>+ Nova habilidade</button>${stickers(p.media,'page')}${footer(i+2)}`;
+  el.querySelectorAll('textarea').forEach(fit);if(RO)el.querySelectorAll('input,textarea').forEach(i=>i.readOnly=true);if(RO)el.querySelectorAll('.rt').forEach(d=>d.contentEditable='false');hydrate();placeStamps(el,p);afterRender();
 }
 function fit(t){t.style.height='auto';t.style.height=Math.max(t.classList.contains('sub')?46:80,t.scrollHeight+2)+'px'}
 function render(){renderToc();renderPage();const c=$('.curl');if(c)c.style.display=cur==='__end'?'none':''}
@@ -500,9 +501,34 @@ function stk(m,i,k){
 }
 const PRE={'GRAU ESPECIAL':'#ffd84d','PERIGO':'#ff5a5a','CLASSIFICADO':'#ff9a4d','LIDO':'#5be3a0','FRAQUEZA':'#4fe3ff','DERROTADO':'#b48cff','ALIADO':'#5be3a0','INIMIGO':'#ff5a5a','SELADO':'#ff6b8a'};
 const scol=s=>/^#[0-9a-f]{6}$/i.test(s.c||'')?s.c:'#ff5a5a';
-function stampsHtml(p){return (p.stamps||[]).map((s,i)=>`<div class="stp" data-si="${i}" style="left:${s.x}%;top:${s.y}px;font-size:${Math.round(20*(s.s||1))}px;--c:${scol(s)}"><div class="stx" style="transform:rotate(${s.r||0}deg)">${esc(s.t)}</div><div class="sbar"><button data-sp="edit" data-si="${i}" title="Editar texto">✎</button><input type="color" data-sp="col" data-si="${i}" value="${scol(s)}" title="Cor"><button data-sp="rl" data-si="${i}" title="Girar para a esquerda">⟲</button><button data-sp="rr" data-si="${i}" title="Girar para a direita">⟳</button><button data-sp="sm" data-si="${i}" title="Diminuir">A−</button><button data-sp="sp" data-si="${i}" title="Aumentar">A+</button><button data-sp="del" data-si="${i}" title="Remover">×</button></div></div>`).join('')}
+function stampHtml(s,i){return `<div class="stp" data-si="${i}" style="left:${s.x}%;top:${s.y}px;font-size:${Math.round(20*(s.s||1))}px;--c:${scol(s)}"><div class="stx" style="transform:rotate(${s.r||0}deg)">${esc(s.t)}</div><div class="sbar"><button data-sp="edit" data-si="${i}" title="Editar texto">✎</button><input type="color" data-sp="col" data-si="${i}" value="${scol(s)}" title="Cor"><button data-sp="rl" data-si="${i}" title="Girar para a esquerda">⟲</button><button data-sp="rr" data-si="${i}" title="Girar para a direita">⟳</button><button data-sp="sm" data-si="${i}" title="Diminuir">A−</button><button data-sp="sp" data-si="${i}" title="Aumentar">A+</button><button data-sp="del" data-si="${i}" title="Remover">×</button></div></div>`}
 function footer(n){const seq=[null,...book.pages.map(p=>p.id),'__end'],i=seq.indexOf(cur);return `<div class="foot"><button data-nav="-1" ${i<=0?'disabled':''}>◀ Anterior</button><span>❦ ${n} ❦</span><button data-nav="1" ${i<0||i>=seq.length-1?'disabled':''}>Próxima ▶</button></div>`}
 function step(d){const seq=[null,...book.pages.map(p=>p.id),'__end'],i=seq.indexOf(cur),j=i+d;if(i<0||j<0||j>=seq.length)return;go(seq[j])}
+function placeStamps(el,p){
+  (p.stamps||[]).forEach((s,i)=>{
+    const c=(s.a&&s.a!=='pg'&&[...el.querySelectorAll('[data-anc]')].find(x=>x.dataset.anc===s.a))||el;
+    c.insertAdjacentHTML('beforeend',stampHtml(s,i));
+  });
+  if(!RO&&(p.stamps||[]).some(s=>!s.a)){
+    const id=p.id;
+    setTimeout(()=>{
+      if(cur!==id||RO)return;
+      let ch=false;
+      document.querySelectorAll('#pg .stp').forEach(e=>{const s=(p.stamps||[])[+e.dataset.si];if(s&&!s.a){reanchor(e,s);ch=true}});
+      if(ch)persist();
+    },900);
+  }
+}
+function reanchor(el,s){
+  const pg=$('#pg'),r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+  const cands=[...pg.querySelectorAll('[data-anc]')].filter(c=>{const b=c.getBoundingClientRect();return cx>=b.left&&cx<=b.right&&cy>=b.top&&cy<=b.bottom}).sort((a,b)=>a.getBoundingClientRect().height-b.getBoundingClientRect().height);
+  const tgt=cands[0]||pg,tb=tgt.getBoundingClientRect();
+  s.a=tgt===pg?'pg':tgt.dataset.anc;
+  s.x=Math.round((r.left-tb.left)/Math.max(1,tb.width)*1000)/10;
+  s.y=Math.round(Math.max(0,(r.top-tb.top)/BK));
+  if(tgt!==el.parentElement)tgt.appendChild(el);
+  el.style.left=s.x+'%';el.style.top=s.y+'px';
+}
 const cvr=$('#cvr');
 $('.cv-eye').src=$('.emblem').src;
 function openBook(){if(cvr.classList.contains('open'))return;cvr.classList.add('open');flipSound();setTimeout(()=>{if(cvr.classList.contains('open'))cvr.style.display='none'},1700)}
@@ -529,17 +555,17 @@ let sd=null;
 document.addEventListener('pointerdown',e=>{
   const el=e.target.closest&&e.target.closest('.stp');if(!el||e.target.closest('.sbar')||RO||rf)return;
   const p=page(),s=p&&(p.stamps||[])[+el.dataset.si];if(!s)return;
-  sd={el,s,r:$('#pg').getBoundingClientRect(),x0:e.clientX,y0:e.clientY,x:s.x,y:s.y};
+  sd={el,s,r:el.parentElement.getBoundingClientRect(),x0:e.clientX,y0:e.clientY,x:s.x,y:s.y,mv:false};
   el.setPointerCapture(e.pointerId);e.preventDefault();
 });
 document.addEventListener('pointermove',e=>{
   if(!sd)return;
-  const dx=e.clientX-sd.x0,dy=e.clientY-sd.y0;
+  const dx=e.clientX-sd.x0,dy=e.clientY-sd.y0;sd.mv=true;
   sd.s.x=Math.round(Math.min(98,Math.max(-2,sd.x+dx/sd.r.width*100))*10)/10;
   sd.s.y=Math.round(Math.max(0,sd.y+dy/BK));
   sd.el.style.left=sd.s.x+'%';sd.el.style.top=sd.s.y+'px';
 });
-document.addEventListener('pointerup',()=>{if(sd){sd=null;persist()}});
+document.addEventListener('pointerup',()=>{if(sd){const d=sd;sd=null;if(d.mv)reanchor(d.el,d.s);persist()}});
 document.addEventListener('click',e=>{
   const t=e.target.closest&&e.target.closest('[data-sp]');if(!t||RO)return;
   const p=page(),s=p&&(p.stamps||[])[+t.dataset.si];if(!s)return;
@@ -589,7 +615,7 @@ function avgHtml(p){const a=p.attr||{},v=Object.keys(a).map(k=>RANKS.indexOf(a[k
 function attrHtml(p){
   const a=p.attr||{};
   const rows=ATN.map((n,i)=>`<label>${n}</label>${RO?`<span class="rk ${tier(a[i])}">${a[i]||'—'}</span>`:`<select class="atsel" data-at="${i}">${RANKS.map(r=>`<option${(a[i]||'—')===r?' selected':''}>${r}</option>`).join('')}</select>`}`).join('');
-  return `<h3>Atributos</h3><div class="attrs"><div id="radar">${radarSvg(p)}</div><div class="atl">${rows}<div class="avg" id="avg">${avgHtml(p)}</div></div></div>`;
+  return `<div data-anc="attrs"><h3>Atributos</h3><div class="attrs"><div id="radar">${radarSvg(p)}</div><div class="atl">${rows}<div class="avg" id="avg">${avgHtml(p)}</div></div></div></div>`;
 }
 document.addEventListener('change',e=>{
   const t=e.target;if(!t.dataset||t.dataset.at===undefined||RO)return;
